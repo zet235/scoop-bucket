@@ -1,12 +1,12 @@
 {
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Keep Windows awake, from the tray or the command line",
     "homepage": "https://github.com/zet235/caffeinate",
     "license": "MIT",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/zet235/caffeinate/releases/download/v0.1.0/caffeinate-0.1.0-x86_64-windows.zip",
-            "hash": "b11ef0f6b090cceeeda44a11cb587e1fcd36af1f9b9fa0744f3c6e24dfbfb3b0"
+            "url": "https://github.com/zet235/caffeinate/releases/download/v0.1.1/caffeinate-0.1.1-x86_64-windows.zip",
+            "hash": "00239e5574a99c8b10155be2e312261445dcab28fdc6ea01d68434cf7e0fca33"
         }
     },
     "bin": "caffeinate.exe",
