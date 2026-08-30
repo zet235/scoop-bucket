@@ -58,7 +58,18 @@ jobs:
 
             # The release publishes a sha256 sidecar; take the hash out of it
             # rather than downloading the whole archive to hash it ourselves.
-            $body = (Invoke-WebRequest -Uri $hashUrl -UseBasicParsing).Content
+            #
+            # Downloaded to a file rather than read from .Content: GitHub serves
+            # release assets as application/octet-stream, and for a non-text
+            # content type Invoke-WebRequest hands back a byte[], which no
+            # amount of -match will find a hex string in.
+            $tmp = New-TemporaryFile
+            try {
+              Invoke-WebRequest -Uri $hashUrl -OutFile $tmp -UseBasicParsing
+              $body = Get-Content $tmp -Raw
+            } finally {
+              Remove-Item $tmp -ErrorAction SilentlyContinue
+            }
             if ($body -notmatch '([a-fA-F0-9]{64})') {
               throw "no sha256 found at $hashUrl"
             }
