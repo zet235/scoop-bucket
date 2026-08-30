@@ -1,0 +1,86 @@
+name: Bump manifests
+
+# Scoop only installs whatever version a manifest names, so without something
+# bumping it, `scoop update` would never see a new release. This does that job:
+# it reads each manifest's own autoupdate block rather than hard coding
+# anything, so a new app in this bucket is picked up for free.
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for new releases
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $changed = @()
+
+          foreach ($file in Get-ChildItem bucket/*.json) {
+            $text = Get-Content $file.FullName -Raw
+            $manifest = $text | ConvertFrom-Json
+
+            $repo = $manifest.checkver.github
+            if (-not $repo) {
+              Write-Host "$($file.Name): no checkver.github, skipping"
+              continue
+            }
+            $slug = ([Uri]$repo).AbsolutePath.Trim('/')
+
+            $tag = (gh api "repos/$slug/releases/latest" --jq .tag_name)
+            $latest = $tag -replace '^v', ''
+            $current = $manifest.version
+
+            if ($latest -eq $current) {
+              Write-Host "$($file.Name): $current is current"
+              continue
+            }
+            Write-Host "$($file.Name): $current -> $latest"
+
+            # Resolve the autoupdate templates the same way scoop would.
+            $url = $manifest.autoupdate.architecture.'64bit'.url `
+                     -replace '\$version', $latest
+            $baseurl = $url.Substring(0, $url.LastIndexOf('/'))
+            $hashUrl = $manifest.autoupdate.hash.url `
+                         -replace '\$baseurl', $baseurl `
+                         -replace '\$version', $latest
+
+            # The release publishes a sha256 sidecar; take the hash out of it
+            # rather than downloading the whole archive to hash it ourselves.
+            $body = (Invoke-WebRequest -Uri $hashUrl -UseBasicParsing).Content
+            if ($body -notmatch '([a-fA-F0-9]{64})') {
+              throw "no sha256 found at $hashUrl"
+            }
+            $hash = $Matches[1].ToLower()
+
+            # Patch the text rather than re-serialising, so formatting and key
+            # order stay exactly as written. The hash goes first: replacing the
+            # version string first could in principle collide inside it.
+            $oldHash = $manifest.architecture.'64bit'.hash
+            $text = $text.Replace($oldHash, $hash).Replace($current, $latest)
+            Set-Content -Path $file.FullName -Value $text -NoNewline
+
+            $changed += "$($file.BaseName) $current -> $latest"
+          }
+
+          if ($changed.Count -eq 0) {
+            Write-Host "nothing to do"
+            exit 0
+          }
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bucket
+          git commit -m ($changed -join ", ")
+          git push
