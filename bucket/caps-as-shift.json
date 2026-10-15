@@ -2,7 +2,7 @@
     "version": "0.1.1",
     "description": "Remap Caps Lock to Left Shift, from the Windows tray",
     "homepage": "https://github.com/zet235/caps-as-shift",
-    "license": "Unknown",
+    "license": "MIT",
     "notes": [
         "Launch CapsAsShift from the Start menu; it runs in the system tray.",
         "Turn Caps Lock off before launching, since the app keeps the existing capitalization lock.",
