@@ -1,0 +1,46 @@
+{
+    "version": "0.1.1",
+    "description": "Remap Caps Lock to Left Shift, from the Windows tray",
+    "homepage": "https://github.com/zet235/caps-as-shift",
+    "license": "Unknown",
+    "notes": [
+        "Launch CapsAsShift from the Start menu; it runs in the system tray.",
+        "Turn Caps Lock off before launching, since the app keeps the existing capitalization lock.",
+        "Exit it from the tray before running 'scoop update caps-as-shift'."
+    ],
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/zet235/caps-as-shift/releases/download/v0.1.1/CapsAsShift.exe",
+            "hash": "e96d65c01bf8bc313635deef2d1387222f3bcb69d0054b9b96eaa38a0bffbdee"
+        }
+    },
+    "shortcuts": [
+        [
+            "CapsAsShift.exe",
+            "CapsAsShift"
+        ]
+    ],
+    "uninstaller": {
+        "script": [
+            "if ($cmd -ne 'uninstall') { return }",
+            "$run = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'",
+            "$value = (Get-ItemProperty -Path $run -Name 'CapsAsShift' -ErrorAction SilentlyContinue).CapsAsShift",
+            "if ($value -and $value.Contains(\"\\apps\\$app\\\")) {",
+            "    Remove-ItemProperty -Path $run -Name 'CapsAsShift'",
+            "}"
+        ]
+    },
+    "checkver": {
+        "github": "https://github.com/zet235/caps-as-shift"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/zet235/caps-as-shift/releases/download/v$version/CapsAsShift.exe"
+            }
+        },
+        "hash": {
+            "url": "$baseurl/SHA256SUMS.txt"
+        }
+    }
+}
